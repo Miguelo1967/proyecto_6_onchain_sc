@@ -1,0 +1,2 @@
+señal,lag_optimo_dias,pearson_r,p_valor,interpretacion
+precio_eth,30,0.3105,0.0,'precio_eth' anticipa el BDI 30 días antes
