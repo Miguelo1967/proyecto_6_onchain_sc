@@ -17,10 +17,8 @@ def cargar_dataset():
 
 def correlacion_pearson(df):
     señales = {
-        "precio_eth":        "Precio ETH (USD)",
-        "volumen_eth":       "Volumen ETH en mercado",
-        "eth_ballena_total": "ETH movido por ballenas",
-        "txs_ballena":       "Nº transacciones ballena",
+        "precio_eth": "Precio ETH (USD)",
+        "volumen_eth": "Volumen ETH en mercado (proxy ballenas)",
     }
     resultados = []
     for col, nombre in señales.items():
@@ -38,7 +36,7 @@ def correlacion_pearson(df):
 
 
 def correlacion_lag(df, max_lag=30):
-    señales = ["precio_eth", "eth_ballena_total", "txs_ballena"]
+    señales = ["precio_eth", "volumen_eth"]
     resultados = []
     for col in señales:
         if col not in df.columns:

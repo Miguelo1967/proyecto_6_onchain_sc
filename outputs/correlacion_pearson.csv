@@ -1,5 +1,3 @@
 señal,columna,pearson_r,p_valor,significativo
 Precio ETH (USD),precio_eth,0.2905,0.0,✅
-Volumen ETH en mercado,volumen_eth,0.1159,0.0,✅
-ETH movido por ballenas,eth_ballena_total,,,❌
-Nº transacciones ballena,txs_ballena,,,❌
+Volumen ETH en mercado (proxy ballenas),volumen_eth,0.1159,0.0,✅

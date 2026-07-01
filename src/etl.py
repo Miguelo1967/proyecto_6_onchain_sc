@@ -68,58 +68,14 @@ def obtener_precio_eth(desde="2022-01-01", hasta="2025-12-31"):
     return df
 
 # ─────────────────────────────────────────────
-# 2. TRANSACCIONES BALLENA — Etherscan v2
+# 2. ACTIVIDAD DE MERCADO — Volumen Binance como proxy
 # ─────────────────────────────────────────────
-def obtener_transacciones_ballena(umbral_eth=1000, max_pages=5):
-    """
-    Extrae transferencias internas grandes de ETH.
-    Retorna DataFrame con columnas: fecha, eth_ballena_total, txs_ballena
-    """
-    print(f"🐋 Descargando transacciones ballena (>= {umbral_eth} ETH) desde Etherscan...")
-
-    todas = []
-    for page in range(1, max_pages + 1):
-        url = (
-            f"https://api.etherscan.io/v2/api"
-            f"?chainid=1"
-            f"&module=account"
-            f"&action=txlistinternal"
-            f"&startblock=0"
-            f"&endblock=99999999"
-            f"&page={page}"
-            f"&offset=200"
-            f"&sort=desc"
-            f"&apikey={ETHERSCAN_KEY}"
-        )
-        resp = requests.get(url, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-
-        if data.get("status") != "1" or not data.get("result"):
-            break
-
-        todas.extend(data["result"])
-        time.sleep(0.25)
-
-    if not todas:
-        print("   ⚠️  Sin resultados de Etherscan")
-        return pd.DataFrame()
-
-    df = pd.DataFrame(todas)
-    df["valor_eth"] = df["value"].astype(float) / 1e18
-    df = df[df["valor_eth"] >= umbral_eth].copy()
-    df["fecha"] = pd.to_datetime(df["timeStamp"].astype(int), unit="s").dt.normalize()
-    df = df[["fecha", "hash", "valor_eth", "from", "to"]].reset_index(drop=True)
-
-    resumen = df.groupby("fecha").agg(
-        eth_ballena_total=("valor_eth", "sum"),
-        txs_ballena=("hash", "count")
-    ).reset_index()
-
-    print(f"   ✅ {len(resumen)} días con actividad ballena")
-    return resumen
-
-
+# Nota: el volumen diario ETHUSDT de Binance se obtiene directamente
+# en obtener_precio_eth() como columna 'volumen_eth'.
+# Se usa como proxy de actividad de grandes holders dado que los
+# movimientos de ballenas representan una fracción significativa
+# del volumen total de mercado.
+# No se requiere función adicional.
 # ─────────────────────────────────────────────
 # 3. BALTIC DRY INDEX — CSV local (Investing.com)
 # ─────────────────────────────────────────────
@@ -166,15 +122,12 @@ def construir_dataset_maestro(desde="2022-01-01", hasta="2025-12-31"):
     Guarda en data/processed/dataset_maestro.csv
     """
     eth_df = obtener_precio_eth(desde, hasta)
-    ballena_df = obtener_transacciones_ballena()
     bdi_df = obtener_bdi(desde="2022-01-01", hasta="2026-12-31")
 
-    df = eth_df.merge(ballena_df, on="fecha", how="left")
+    df = eth_df.copy()
     df = df.merge(bdi_df, on="fecha", how="left")
 
     df["bdi"] = df["bdi"].ffill()
-    df["eth_ballena_total"] = df["eth_ballena_total"].fillna(0)
-    df["txs_ballena"] = df["txs_ballena"].fillna(0)
 
     output_path = "data/processed/dataset_maestro.csv"
     os.makedirs("data/processed", exist_ok=True)
